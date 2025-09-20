@@ -1,0 +1,7 @@
+{
+  "name": "Career Compass AI",
+  "description": "An AI-powered career counselor that asks personalized questions to understand your aspirations, generates visual career roadmaps, and connects you with a specialized AI mentor for a simulated one-on-one session.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
