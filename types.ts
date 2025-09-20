@@ -1,4 +1,3 @@
-
 import type { Node, Edge } from 'reactflow';
 
 export enum AppState {
@@ -26,9 +25,11 @@ export interface Roadmap {
   edges: Edge[];
 }
 
-// Extend the Window interface to include ReactFlow from the CDN
+// Extend the Window interface to include ReactFlow from the CDN and Web Speech API
 declare global {
   interface Window {
     ReactFlow: any;
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
   }
 }
