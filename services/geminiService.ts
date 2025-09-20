@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { QAndA, QuestionWithOptions, Roadmap } from '../types';
 
@@ -88,7 +87,10 @@ export const generateQuestion = async (history: QAndA[]): Promise<QuestionWithOp
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: prompt,
-    config: questionGenerationConfig,
+    config: { 
+      ...questionGenerationConfig,
+      thinkingConfig: { thinkingBudget: 0 } 
+    },
   });
 
   const jsonText = response.text.replace(/```json|```/g, '').trim();
@@ -127,7 +129,10 @@ export const generateMentorIntro = async (careerPath: string): Promise<string> =
 
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: prompt
+        contents: prompt,
+        config: {
+          thinkingConfig: { thinkingBudget: 0 }
+        }
     });
 
     return response.text;
