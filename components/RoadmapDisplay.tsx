@@ -1,6 +1,8 @@
 
+
 import React, { useState, useMemo } from 'react';
-import ReactFlow, { Background, Controls, MiniMap, Edge, Node } from 'reactflow';
+// Fix: Import BackgroundVariant from reactflow to use for the variant prop.
+import ReactFlow, { Background, Controls, MiniMap, Edge, Node, BackgroundVariant } from 'reactflow';
 import { Roadmap } from '../types';
 import 'reactflow/dist/style.css';
 
@@ -46,10 +48,10 @@ const RoadmapDisplay: React.FC<RoadmapDisplayProps> = ({ roadmaps, onSelect }) =
           <button
             key={index}
             onClick={() => setActiveTab(index)}
-            className={`px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+            className={`px-4 py-3 text-sm font-semibold transition-colors duration-200 focus:outline-none ${
               activeTab === index
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'border-b-2 border-purple-500 text-purple-300 font-bold'
+                : 'text-gray-400 hover:text-purple-400 border-b-2 border-transparent'
             }`}
           >
             {roadmap.title}
@@ -63,23 +65,28 @@ const RoadmapDisplay: React.FC<RoadmapDisplayProps> = ({ roadmaps, onSelect }) =
             <p className="text-gray-300 mb-6 flex-grow">{currentRoadmap.description}</p>
             <button
                 onClick={() => onSelect(currentRoadmap)}
-                className="w-full px-6 py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-800 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                className="w-full px-6 py-3 bg-purple-600 text-white font-bold rounded-full hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-800 transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
-                Meet Your Mentor for this Path
+                Meet Your AI Mentor
             </button>
         </div>
         <div className="md:w-2/3 h-full bg-gray-900/50 rounded-lg overflow-hidden border border-gray-700">
            <ReactFlow
               nodes={nodesWithType}
-              edges={currentRoadmap.edges}
+              edges={currentRoadmap.edges as Edge[]}
+              nodeTypes={nodeTypes}
               fitView
               proOptions={proOptions}
-              nodeTypes={nodeTypes}
-           >
-            <Background color="#4a5568" gap={16} />
-            <Controls />
-            <MiniMap nodeColor={n => n.type === 'input' ? '#A78BFA' : (n.type === 'output' ? '#6EE7B7' : '#3B82F6')} />
-          </ReactFlow>
+            >
+              {/* Fix: Use BackgroundVariant.Dots for type safety. */}
+              <Background color="#4a044e" variant={BackgroundVariant.Dots} />
+              <Controls />
+              <MiniMap nodeColor={(n) => {
+                  if (n.type === 'input') return '#6366f1';
+                  if (n.type === 'output') return '#a855f7';
+                  return '#2dd4bf';
+              }} />
+            </ReactFlow>
         </div>
       </div>
     </div>

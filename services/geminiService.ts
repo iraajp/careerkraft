@@ -1,139 +1,27 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import type { QAndA, QuestionWithOptions, Roadmap } from '../types';
 
-const API_KEY = process.env.API_KEY;
+const API_BASE_URL = process.env.NODE_ENV === 'production' ? 'https://your-backend-app.railway.app' : 'http://localhost:3001';
 
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json() as Promise<T>;
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
-
-const questionGenerationConfig = {
-  responseMimeType: "application/json",
-  responseSchema: {
-    type: Type.OBJECT,
-    properties: {
-      question: { type: Type.STRING },
-      options: {
-        type: Type.ARRAY,
-        items: { type: Type.STRING }
-      }
-    }
-  },
+export const generateQuestion = (history: QAndA[]): Promise<QuestionWithOptions> => {
+  return fetch(`${API_BASE_URL}/api/generate-question`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ history }),
+  }).then(handleResponse<QuestionWithOptions>);
 };
 
-const roadmapGenerationConfig = {
-    responseMimeType: "application/json",
-    responseSchema: {
-        type: Type.ARRAY,
-        items: {
-            type: Type.OBJECT,
-            properties: {
-                title: { type: Type.STRING },
-                description: { type: Type.STRING },
-                nodes: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            id: { type: Type.STRING },
-                            type: { type: Type.STRING },
-                            data: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    label: { type: Type.STRING }
-                                }
-                            },
-                            position: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    x: { type: Type.NUMBER },
-                                    y: { type: Type.NUMBER }
-                                }
-                            }
-                        }
-                    }
-                },
-                edges: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            id: { type: Type.STRING },
-                            source: { type: Type.STRING },
-                            target: { type: Type.STRING }
-                        }
-                    }
-                }
-            }
-        }
-    }
-};
-
-
-export const generateQuestion = async (history: QAndA[]): Promise<QuestionWithOptions> => {
-  const historyText = history.map(qa => `Q: ${qa.question}\nA: ${qa.answer}`).join('\n\n');
-  const prompt = `You are a career counselor AI. Your goal is to understand a user's interests, values, and skills. 
-  Generate a single, insightful multiple-choice question to help determine a suitable career path. 
-  Provide 4 distinct and meaningful options.
-  Avoid generic questions. Make it thought-provoking.
-  The user has already answered the following questions:
-  ${historyText}
-
-  Based on this, create the next question.
-  `;
-  
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: { 
-      ...questionGenerationConfig,
-      thinkingConfig: { thinkingBudget: 0 } 
-    },
-  });
-
-  const jsonText = response.text.replace(/```json|```/g, '').trim();
-  return JSON.parse(jsonText) as QuestionWithOptions;
-};
-
-
-export const generateRoadmaps = async (history: QAndA[]): Promise<Roadmap[]> => {
-    const historyText = history.map(qa => `Q: ${qa.question}\nA: ${qa.answer}`).join('\n\n');
-    const prompt = `You are an expert career strategist. Based on the following Q&A with a user, generate 3 distinct and detailed career roadmaps.
-    For each roadmap, provide a title, a short description, and a series of steps as nodes and connections as edges, formatted for a flowchart.
-    The output must be a JSON array of 3 roadmap objects.
-    Each roadmap object must have 'title', 'description', 'nodes', and 'edges'.
-    Nodes must have 'id', 'type' ('input' for the start, 'output' for the end, 'default' otherwise), 'data: { label: "..." }', and 'position: { x: ..., y: ... }'.
-    Edges must have 'id', 'source', and 'target'.
-    Arrange the node positions in a clear, top-to-bottom vertical flow. Start with y=0, and increment y by 100 for each subsequent level. Keep x values consistent for a clean vertical line, e.g., x=250.
-    
-    Here's the user's Q&A:
-    ${historyText}
-    `;
-
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: roadmapGenerationConfig,
-    });
-    
-    const jsonText = response.text.replace(/```json|```/g, '').trim();
-    return JSON.parse(jsonText) as Roadmap[];
-};
-
-export const generateMentorIntro = async (careerPath: string): Promise<string> => {
-    const prompt = `You are a helpful and experienced AI mentor specializing in the field of ${careerPath}. 
-    Create a warm, encouraging, and brief introductory message (2-3 sentences) to start a simulated video call with a user who is new to this field. 
-    Your response should be plain text, ready to be spoken.`;
-
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          thinkingConfig: { thinkingBudget: 0 }
-        }
-    });
-
-    return response.text;
+export const generateRoadmaps = (history: QAndA[]): Promise<Roadmap[]> => {
+  return fetch(`${API_BASE_URL}/api/generate-roadmaps`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ history }),
+  }).then(handleResponse<Roadmap[]>);
 };
