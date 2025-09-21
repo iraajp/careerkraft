@@ -13,19 +13,36 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({ roadmap, onCallSubm
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const validatePhoneNumber = (phone: string): boolean => {
+    // Remove all non-digit characters except '+'
+    const digits = phone.replace(/[^\d+]/g, '');
+    
+    // Check for international format (starting with '+')
+    if (digits.startsWith('+')) {
+      // International numbers should have at least 11 digits including country code
+      return digits.length >= 11;
+    }
+    
+    // For US numbers, should have exactly 10 digits
+    return digits.length === 10;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Basic validation: check if it's not empty and has a reasonable length
-    if (phoneNumber.replace(/\D/g, '').length < 10) {
-      alert('Please enter a valid phone number including area code.');
+    setValidationError(null);
+
+    if (!validatePhoneNumber(phoneNumber)) {
+      setValidationError('Please enter a valid phone number (10 digits for US numbers, or include country code for international numbers)');
       return;
     }
+
     setIsLoading(true);
     const success = await onCallSubmit(phoneNumber);
     if (!success) {
       setIsLoading(false);
     }
-    // On success, the parent component will handle the state transition
   };
 
   return (
@@ -49,12 +66,20 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({ roadmap, onCallSubm
             id="phone-number"
             type="tel"
             value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            onChange={(e) => {
+              setPhoneNumber(e.target.value);
+              setValidationError(null);
+            }}
             placeholder="e.g., +1 (555) 123-4567"
             required
             disabled={isLoading}
-            className="w-full px-4 py-3 bg-gray-900/50 border-2 border-gray-600 rounded-lg text-white text-center text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+            className={`w-full px-4 py-3 bg-gray-900/50 border-2 ${
+              validationError ? 'border-red-500' : 'border-gray-600'
+            } rounded-lg text-white text-center text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors`}
           />
+          {validationError && (
+            <p className="mt-2 text-red-400 text-sm">{validationError}</p>
+          )}
         </div>
 
         {isLoading ? (

@@ -3,6 +3,7 @@ import type { Node, Edge } from 'reactflow';
 export enum AppState {
   LOGIN,
   SIGNUP,
+  DASHBOARD,
   WELCOME,
   QUESTIONNAIRE,
   GENERATING_ROADMAPS,
@@ -31,6 +32,34 @@ export interface Roadmap {
 export interface User {
   id: string;
   email: string;
+}
+
+export interface Todo {
+  id: string;
+  title: string;
+  description: string;
+  status: 'not-started' | 'in-progress' | 'completed';
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  content: string;
+  sender: 'user' | 'ai';
+  timestamp: string;
+  userId: string;
+}
+
+export interface AuthContextType {
+  currentUser: User | null;
+  isLoading: boolean;
+  error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  clearError: () => void;
 }
 
 // Extend the Window interface to include ReactFlow from the CDN

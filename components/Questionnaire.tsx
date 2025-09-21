@@ -23,10 +23,15 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onComplete }) => {
     setSelectedOption(null);
     try {
       const questionData = await generateQuestion(history);
+      // Additional validation
+      if (!questionData || !questionData.question || !Array.isArray(questionData.options)) {
+        throw new Error('Invalid question format received');
+      }
       setCurrentQuestion(questionData);
     } catch (e) {
       console.error(e);
-      setError("Failed to load question. Please try again.");
+      setError(e instanceof Error ? e.message : "Failed to load question. Please try again.");
+      setCurrentQuestion(null);
     } finally {
       setIsLoading(false);
     }
@@ -36,7 +41,11 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onComplete }) => {
     if (history.length < TOTAL_QUESTIONS) {
       fetchNextQuestion();
     } else {
-      onComplete(history);
+      // Show loading state for a moment before transitioning
+      setIsLoading(true);
+      setTimeout(() => {
+        onComplete(history);
+      }, 500);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history.length]);
@@ -77,7 +86,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onComplete }) => {
             </div>
         ) : error ? (
             <div className="text-red-400 text-center">{error}</div>
-        ) : currentQuestion && (
+        ) : currentQuestion && currentQuestion.options && Array.isArray(currentQuestion.options) ? (
             <>
             <h2 className="text-2xl md:text-3xl font-semibold text-center mb-8 text-gray-100">
                 {currentQuestion.question}
@@ -101,6 +110,16 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ onComplete }) => {
                 ))}
             </div>
             </>
+        ) : (
+            <div className="text-red-400 text-center">
+                <p>There was an error loading the question. Please try again.</p>
+                <button 
+                    onClick={fetchNextQuestion}
+                    className="mt-4 px-6 py-2 bg-purple-600 text-white font-bold rounded-full hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-800 transition-all duration-300"
+                >
+                    Retry
+                </button>
+            </div>
         )}
       </div>
     </div>
